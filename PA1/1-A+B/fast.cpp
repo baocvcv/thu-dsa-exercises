@@ -18,7 +18,7 @@ int multiply(const char* op1, const char* op2, unsigned int* res)
 {
     int n1 = strlen(op1);
     int n2 = strlen(op2);
-    int n = (n1+n2+1)/4 + 1;
+    int n = n1/4 + n2/4 + 3;
     for (int i = 0; i < n; i++)
         res[i] = 0;
 
@@ -27,36 +27,36 @@ int multiply(const char* op1, const char* op2, unsigned int* res)
         int x1 = stoi(op1+i);
         for(j = n1-4; j >= 0; j-=4){
             int x2 = stoi(op2+j);
-            int pos = i/4 + j/4 + 1;
+            int pos = i/4 + j/4 + 5;
             res[pos] += x1 * x2;
-            res[pos-1] += res[i+j+2] / 100000000;
-            res[pos] %= 100000000;
+            res[pos-1] += res[pos] / 10000;
+            res[pos] %= 10000;
         }
         if(j < 0){
             j += 4;
             int x2 = stoi(op2, j);
-            int pos = i/4 + j/4 + 1;
+            int pos = i/4 + j/4 + 5;
             res[pos] += x1 * x2;
-            res[pos-1] += res[i+j+2] / 100000000;
-            res[pos] %= 100000000;
+            res[pos-1] += res[pos] / 10000;
+            res[pos] %= 10000;
         }
     }
     if(i < 0){
         int x1 = stoi(op1, i+4);
         for(j = n1-4; j >= 0; j-=4){
             int x2 = stoi(op2+j);
-            int pos = i/4 + j/4 + 1;
+            int pos = i/4 + j/4 + 5;
             res[pos] += x1 * x2;
-            res[pos-1] += res[i+j+2] / 100000000;
-            res[pos] %= 100000000;
+            res[pos-1] += res[pos] / 10000;
+            res[pos] %= 10000;
         }
         if(j < 0){
             j += 4;
             int x2 = stoi(op2, j);
-            int pos = i/4 + j/4 + 1;
+            int pos = i/4 + j/4 + 5;
             res[pos] += x1 * x2;
-            res[pos-1] += res[i+j+2] / 100000000;
-            res[pos] %= 100000000;
+            res[pos-1] += res[pos] / 10000;
+            res[pos] %= 10000;
         }
     }
 
