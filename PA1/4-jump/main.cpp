@@ -2,6 +2,7 @@
 #include <cstring>
 #include <iostream>
 
+#define MAX 1e16
 // #define DEBUG
 
 template<typename T> T read(T &x){
@@ -45,11 +46,17 @@ int main(){
     q = new long long[n+1]; // index queue, increasing int [l, r]
     int ql = 1, qr = 0;
     f[1] = 0;
-    int l_last = l[1], r_last = r[1];
+    // mark unreachable points
+    int s = 2;
+    while(s < l[1])
+        f[s++] = MAX;
+
+
+    int l_last = 1, r_last = 1;
     for(int k = 2; k <= n; k++){
         int l_cur = l_last;
         int r_cur = r_last;
-        while(r[l_cur] < k){
+        while(r[l_cur] < k && l_cur < k){
             l_cur++;
         }
         while(l[r_cur] < k){
