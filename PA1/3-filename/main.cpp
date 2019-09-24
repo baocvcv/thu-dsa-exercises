@@ -7,23 +7,20 @@ int main(){
     int dp[501005];
 
     scanf("%d%d%d", &N, &M, &K);
+
     // start from pos 1
     scanf("%s", source+1);
     scanf("%s", target+1);
 
-    auto min = [](int a, int b){
-        return a < b ? a : b;
-    };
-
-    bool flag = false;
     for(int i = 0; i <= N; i++){ // i = 0
         dp[i] = i;
     }
+
     int i, j;
+    bool flag = false;
     for(j = 1; j <= M; j++){
-        // p[i-1, j-1]
-        int p0 = dp[0];
         int i0 = (j < 106) ? 1 : j - 105;
+        int p0 = dp[i0 - 1]; // p[i-1, j-1]
         for(i = i0; i <= j + 105 && i <= N; i++){
             int tmp = dp[i]; // tmp = p[i, j-1]
             if(source[i] == target[j]){
@@ -38,17 +35,6 @@ int main(){
     }
     if(j > M && i > N)
         flag = true;
-
-
-    // abs
-    auto abs = [](int a){
-        return a > 0 ? a : -a;
-    };
-
-    // if(dp[N] > K || abs(M-N) > K)
-    //     printf("-1\n");
-    // else
-    //     printf("%d\n", dp[N]);
 
     if(flag && dp[N] <= K)
         printf("%d\n", dp[N]);
