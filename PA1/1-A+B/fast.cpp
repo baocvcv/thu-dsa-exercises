@@ -1,12 +1,16 @@
-#include <iostream>
-#include <string>
 #include <cstring>
+#include <cstdio>
+#include <cmath>
 
 using namespace std;
 
-int stoi(const char* s, int len = 4)
+const int LEN = 8;
+const int BUF_SIZE = 1500;
+const long long MOD = pow(10, LEN);
+
+inline long long stoi(const char* s, int len = LEN)
 {
-    int res = 0;
+    long long res = 0;
     for(int i = 0; i < len; i++){
         res = res * 10 + s[i] - '0'; 
     }
@@ -14,70 +18,66 @@ int stoi(const char* s, int len = 4)
 }
 
 // unsigned long 20 digits, each part uses 9 digits
-int multiply(const char* op1, const char* op2, unsigned int* res)
+int multiply(const char* op1, const char* op2, long long* res)
 {
     int n1 = strlen(op1);
     int n2 = strlen(op2);
-    int n = n1/4 + n2/4 + 3;
-    for (int i = 0; i < n; i++)
-        res[i] = 0;
+    long long a[BUF_SIZE], b[BUF_SIZE];
+    memset(a, 0, sizeof(long long) * BUF_SIZE);
+    memset(b, 0, sizeof(long long) * BUF_SIZE);
 
-    int i, j;
-    for (i = n2-4; i >= 0; i-=4){
-        int x1 = stoi(op1+i);
-        for(j = n1-4; j >= 0; j-=4){
-            int x2 = stoi(op2+j);
-            int pos = i/4 + j/4 + 5;
-            res[pos] += x1 * x2;
-            res[pos-1] += res[pos] / 10000;
-            res[pos] %= 10000;
-        }
-        if(j < 0){
-            j += 4;
-            int x2 = stoi(op2, j);
-            int pos = i/4 + j/4 + 5;
-            res[pos] += x1 * x2;
-            res[pos-1] += res[pos] / 10000;
-            res[pos] %= 10000;
-        }
+    // convert to LEN-digit numbers
+    int lenA = 0;
+    for(int i = n1; i > 0; i -= LEN){
+        int j = (i - LEN) > 0 ? i - LEN : 0;
+        a[lenA++] = stoi(op1 + j, i - j);
     }
-    if(i < 0){
-        int x1 = stoi(op1, i+4);
-        for(j = n1-4; j >= 0; j-=4){
-            int x2 = stoi(op2+j);
-            int pos = i/4 + j/4 + 5;
-            res[pos] += x1 * x2;
-            res[pos-1] += res[pos] / 10000;
-            res[pos] %= 10000;
-        }
-        if(j < 0){
-            j += 4;
-            int x2 = stoi(op2, j);
-            int pos = i/4 + j/4 + 5;
-            res[pos] += x1 * x2;
-            res[pos-1] += res[pos] / 10000;
-            res[pos] %= 10000;
+    int lenB = 0;
+    for(int i = n2; i > 0; i -= LEN){
+        int j = (i - LEN) > 0 ? i - LEN : 0;
+        b[lenB++] = stoi(op2 + j, i - j);
+    }
+
+    // perform mulitply
+    for(int i = 0; i < lenA; i++){
+        for(int j = 0; j < lenB; j++){
+            res[i + j] += a[i] * b[j];
         }
     }
 
-    return n;
+    // move up 
+    for(int i = 0; i < lenA + lenB; i++){
+        res[i + 1] += res[i] / MOD;
+        res[i] %= MOD;
+    }
+
+    return lenA + lenB;
 }
 
 int main() {
     int n;
-    cin >> n;
+    scanf("%d", &n);
 
     char op1[5005], op2[5005];
     for(int i = 0; i < n; i++){
-        cin >> op1 >> op2;
-        unsigned int res[3000];
+        scanf("%s %s", op1, op2);
+        long long res[5000];
+        memset(res, 0, sizeof(long long) * 5000);
         int len = multiply(op1, op2, res);
-        int j = 0;
-        while(res[j] == 0)
-            j++;
-        while(j < len)
-            cout << res[j++];
-        cout << endl;
+
+        // walk through 0s
+        while(res[len] == 0 && len > 0)
+            len--;
+        // first "digit"
+        printf("%lld", res[len]);
+        len--;
+        // rest of the "digits"
+        while(len >= 0){
+            printf("%08lld", res[len]);
+            len--;
+        }
+        printf("\n");
     }
+
     return 0;
 }
