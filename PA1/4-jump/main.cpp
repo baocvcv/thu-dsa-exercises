@@ -46,11 +46,6 @@ int main(){
     q = new long long[n+1]; // index queue, increasing int [l, r]
     int ql = 1, qr = 0;
     f[1] = 0;
-    // mark unreachable points
-    int s = 2;
-    while(s < l[1])
-        f[s++] = MAX;
-
 
     int l_last = 1, r_last = 1;
     for(int k = 2; k <= n; k++){
@@ -59,9 +54,16 @@ int main(){
         while(r[l_cur] < k && l_cur < k){
             l_cur++;
         }
-        while(l[r_cur] < k){
+        while(r[r_cur] < k && r_cur < k){
             r_cur++;
         }
+        // check if reachable
+        if(l[l_cur] > k){
+            f[k] = MAX;
+            continue;
+        }
+
+        // if reachable
         while(ql <= qr && q[ql] < l_cur){
             // pop item
             ql++;
