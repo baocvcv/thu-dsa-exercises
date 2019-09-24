@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 #define MAX 1e16
@@ -6,6 +7,7 @@
 
 using namespace std;
 
+/*
 template <typename T>
 inline T read(T &x){
     T data = 0;
@@ -24,10 +26,11 @@ inline T read(T &x){
     x = data * sgn;
     return x;
 }
+*/
 
 int main(){
     // vars in the problem description
-    long long *t;
+    int *t;
     int *l, *r;
     int n;
 
@@ -36,21 +39,21 @@ int main(){
     // q for a queue
     long long *q;
 
-    read(n);
+    scanf("%d", &n);
     l = new int[n+1];
     r = new int[n+1];
-    t = new long long[n+1];
+    t = new int[n+1];
     f = new long long[n+1];
+    memset(f, 0, sizeof(long long) * (n+1));
 
     for(int i = 1; i < n; i++){
-        read(l[i]);
-        read(r[i]);
-        read(t[i]);
+        scanf("%d %d %d", l+i, r+i, t+i);
     }
+    t[n] = 0;
 
     q = new long long[n+1]; // index queue, increasing int [l, r]
     int qStart = 1, qEnd = 0;
-    f[1] = 0;
+    f[1] = t[1];
 
     int prevLeftBound= 1, prevRightBound= 1;
     for(int k = 2; k <= n; k++){
@@ -78,19 +81,30 @@ int main(){
             qStart++;
         }
         int i = curLeftBound > prevRightBound ? curLeftBound : prevRightBound;
-        for(; i <= curRightBound; i++){
-            while(qStart <= qEnd && f[q[qEnd]] > f[curRightBound]){
+        for(; i < curRightBound; i++){
+            while(qStart <= qEnd && f[q[qEnd]] > f[i]){
                 qEnd--;
             }
             q[++qEnd] = i;
         }
 
         // update f
-        f[k] = f[q[1]] + t[q[1]];
+        f[k] = f[q[qStart]] + t[k];
 
         // update boundaries
         prevLeftBound = curLeftBound;
         prevRightBound = curRightBound;
+
+        // printf("%d: %d, %d\n", k, curLeftBound, curRightBound);
+        // for(int j = 1; j <= n; j++){
+        //     printf("%d ", f[j]);
+        // }
+        // printf("\n");
+        // printf("queue: ");
+        // for(int j = qStart; j <= qEnd; j++){
+        //     printf("%d ", q[j]);
+        // }
+        // printf("\n");
     }
 
     printf("%lld\n", f[n]);
