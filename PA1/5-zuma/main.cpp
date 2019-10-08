@@ -2,6 +2,8 @@
 #include <cstring>
 #include <cmath>
 
+#define isdigit(x) ('0' <= (x) && (x) <= '9')
+
 template <typename T> 
 inline T read(T &x){
     char c;
@@ -39,8 +41,8 @@ struct List {
     int _size;
 
     List() {
-        _head = 0;
-        _size = 0;
+        _head = new Node(0, 0);
+        _tail = _head;
     }
 };
 
@@ -75,62 +77,87 @@ void add(int pos, char c){
     N++;
 
     // merge & rebuild
-    while(merge())
-        ;
+    merge();
     rebuild();
 }
 
 bool merge(){
-    if(N == 0)
+    if(N < 3)
         return false;
 
+    // TODO: possible solution
+    /* if >3 consecutive chars detected,
+    connect the lists into a single list and merge
+    after merge is complete, rebuild
+    */
+
+    // another thought:
+    // only check the pos where new bead is added
+    // this requires two-sided linked list
+
     bool flag = false;
-    Node* h_prev = array[0]._head;
-    Node* h = h_prev;
+    Node* h_prev = array[0]._head->_next;
     int curBlock = 0;
     int nextBlock = 1;
-    int counter = 1;
-    while(h != 0){
-        Node* p = h->_next;
-        if(p == 0){
-            if(array[nextBlock]._head != 0){
-                p = array[nextBlock]._head;
+    // check if merge is needed
+    do{ // while(h != 0)
+        Node* h_cur = h_prev->_next;
+        if(h_cur == 0){ // reaches the end of the list
+            while(nextBlock < M && array[nextBlock]._size <= 0){
+                nextBlock++;
+            }
+            if(nextBlock < M){
+                h_cur = array[nextBlock]._head->_next;
                 nextBlock++;
             }else{
-                // p == 0 && array[nextBlock]._head == 0
+                // h_cur == 0 && array[M-1]._head == 0
                 break;
             }
         }
-        while(p->_c == h->_c){
+
+        int counter = 1;
+        while(h_cur->_c == h_prev->_c){
             counter++;
-            p = p->_next;
-            if(p == 0){
-                if(array[nextBlock]._head != 0){
-                    p = array[nextBlock]._head;
+            if(counter > 2){
+                flag = true;
+                break;
+            }
+
+            h_cur = h_cur->_next;
+            if(h_cur == 0){
+                while(nextBlock < M && array[nextBlock]._size <= 0){
+                    nextBlock++;
+                }
+                if(nextBlock < M){
+                    h_cur = array[nextBlock]._head->_next;
                     nextBlock++;
                 }else{
-                    // p == 0 && array[nextBlock]._head == 0
+                    // h_cur == 0 && array[M-1]._head == 0
                     break;
                 }
             }
         }
-        if(counter >= 3){
-            Node *tmp = h->_next;
-            while(h != p){
-                delete h;
-                h = tmp;
-                tmp = h->_next;
-            }
-            h_prev->_next = h;
-            flag = true;
-        }else{
-            while(h_prev->_next != p){
-                h_prev = h_prev->_next;
-            }
-            h = p;
+        if(counter >= 3)
+            break;
+        h_prev = h_cur;
+    }while(h != 0 && nextBlock < M);
+
+    if(flag){ // require merging
+        // gather all the nodes
+        Node* tail = array[0]._tail;
+        for(int i = 1; i < M && tail != 0; i++){
+            tail->_next = array[i]._head->_next;
+            tail = array[i]._tail;
+            array[i]._head->_next = 0;
+            array[i]._tail = array[i]._head;
+            array[i]._size = 0;
         }
+
+        // TODO: delete nodes
+
+    
+
     }
-    //TODO: update block info!!!!!!!!!??????????????
 
     return flag;
 }
@@ -150,22 +177,22 @@ void rebuild(){
     // merge
     Node* tail = array[0]._tail;
     for(int i = 1; i < M && tail != 0; i++){
-        tail->_next = array[i]._head;
+        tail->_next = array[i]._head->_next;
         tail = array[i]._tail;
-        array[i]._head = 0;
+        array[i]._head->_next = 0;
+        array[i]._tail = array[i]._head;
         array[i]._size = 0;
-        array[i]._tail = 0;
     }
 
     // split
     M = N / blockSize + 1;
-    Node* h = array[0]._head;
-    for(int i = 1; i < N; i++){
+    Node* h = array[0]._head->_next;
+    for(int i = 1, n = 1; i < N; i++){
         if(i % blockSize == 0){
-            int n = i / blockSize;
             array[n-1]._tail = h; 
             array[n-1]._size = blockSize;
-            array[n]._head = h->_next;
+            array[n]._head->_next = h->_next;
+            n++;
         }
         h = h->_next;
     }
@@ -190,24 +217,14 @@ void print(){
 
 int main(){
     // read initial string 
-    Node* head = 0;
-    Node* tail = 0;
-    int size = 0;
     char c = getchar();
+    List &arr = array[0];
     while(c != '\n'){
-        if(head == 0){
-            head = new Node(c, 0);
-            tail = head;
-        }else{
-            tail->_next = new Node(c, 0);
-            tail = tail->_next;
-        }
-        size++;
+        arr._tail->_next = new Node(c, 0);
+        arr._tail = arr._tail->_next;
+        arr._size++;
     }
-    array[0]._head = head;
-    array[0]._tail = tail;
-    array[0]._size = size;
-    N = size;
+    N = arr._size;
 
     print();
 
@@ -228,7 +245,7 @@ int main(){
 
     for(int i = 0; i < M; i++){
         if(array[i]._size > 0){
-            Node* h = array[i]._head;
+            Node* h = array[i]._head->_next;
             while(h != 0){
                 printf("%c", h->_c);
                 h = h->_next;
