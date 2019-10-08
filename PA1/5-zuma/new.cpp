@@ -50,6 +50,18 @@ List array[800];
 int M = 1;
 int N;
 
+void print(){
+    for(int i = 0; i < M; i++){
+        Node* h = array[i]._head->_next;
+        for(int j = 0; j < array[i]._size; j++){
+            printf("%c", h->_c);
+            h = h->_next;
+        }
+        printf("  %d\n", array[i]._size);
+    }
+    printf("\n");
+}
+
 bool merge(){
     if(N < 3)
         return false;
@@ -60,21 +72,27 @@ bool merge(){
         Node* h_cur = h_prev->_next;
         int counter = 1;
         // look for mergable section
-        bool local_flag = false;
         while(h_cur->_next != 0 && h_cur->_next->_c == h_prev->_next->_c){
             counter++;
+            // printf("%c %c %d\n", h_prev->_next->_c, h_cur->_next->_c, counter);
             h_cur = h_cur->_next;
-            if(counter > 2){
-                flag = true;
-                local_flag = true;
-                break;
-            }
         }
 
-        if(local_flag){
-            // merge
-            //TODO: delete merged nodes
-            h_prev->_next = h_cur->_next;
+        if(counter > 2){
+            flag = true;
+            N -= counter;
+            //delete nodes
+            Node *h_tmp1 = h_prev->_next;
+            Node *h_tmp2 = h_tmp1->_next;
+            for (; counter > 0; counter--){
+                // printf("%c", h_tmp1->_c);
+                delete h_tmp1;
+                h_tmp1 = h_tmp2;
+                if(h_tmp2 != 0)
+                    h_tmp2 = h_tmp2->_next;
+            }
+            // printf("\n");
+            h_prev->_next = h_tmp1;
         }else{
             h_prev = h_cur;
         }
@@ -83,14 +101,12 @@ bool merge(){
 }
 
 void rebuild(bool force = false){
-    if(N <= 0)
-        return;
-
     int blockSize = sqrt(N);
     if(!force){
         bool flag = false; // is rebuild necessary
         for(int i = 0; i < M; i++){
-            if(array[i]._size > blockSize*10){
+            //TODO: change threshold value before submitting
+            if(array[i]._size > blockSize * 5){
                 flag = true;
                 break;
             }
@@ -101,7 +117,8 @@ void rebuild(bool force = false){
 
     // split
     Node* h = array[0]._head->_next;
-    for(int i = 1, M = 1; i < N; i++){
+    M = 1;
+    for(int i = 1; i < N; i++){
         if(i % blockSize == 0){
             array[M-1]._tail = h; 
             array[M-1]._size = blockSize;
@@ -111,7 +128,11 @@ void rebuild(bool force = false){
         h = h->_next;
     }
     array[M-1]._tail = h;
-    array[M-1]._size = N % blockSize;
+    if(blockSize == 0){
+        array[M-1]._size = 0;
+    }else{
+        array[M-1]._size = N % blockSize == 0 ? blockSize : N % blockSize;
+    }
 }
 
 void add(int pos, char c){
@@ -142,23 +163,13 @@ void add(int pos, char c){
     array[x]._size++;
     N++;
 
-    // merge & rebuild
-    while(merge())
-        ;
-    rebuild();
-}
+    // print();
 
-void print(){
-    printf("\n******************\n");
-    for(int i = 0; i < M; i++){
-        Node* h = array[i]._head->_next;
-        while(h != array[i]._tail->_next){
-            printf("%c", h->_c);
-            h = h->_next;
-        }
-        printf("  %d\n", array[i]._size);
-    }
-    printf("\n");
+    // merge & rebuild
+    bool flag = false;
+    while(merge())
+        flag = true;
+    rebuild(flag);
 }
 
 int main(){
@@ -173,8 +184,6 @@ int main(){
     array[0]._size = N;
     rebuild();
 
-    print();
-
     // ops
     int n;
     read(n);
@@ -183,8 +192,9 @@ int main(){
         char c;
         read(pos);
         c = getchar();
+        // printf("%d %c\n", pos, c);
         add(pos, c);
-        print();
+        // print();
     }
 
     Node* h = array[0]._head->_next;
