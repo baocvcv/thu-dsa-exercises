@@ -1,0 +1,44 @@
+9
+42
+> L
+I L t
+I R '
+< R
+< R
+I R -
+I L n
+I L s
+I L i
+I R b
+I L a
+I R -
+I L k
+I L a
+> L
+R
+> R
+> R
+> R
+> R
+> R
+< L
+< L
+< L
+R
+< L
+< L
+< L
+< L
+< L
+< L
+< L
+R
+> L
+> L
+< R
+< R
+< R
+D L
+D L
+D L
+S

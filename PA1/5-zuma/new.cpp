@@ -49,6 +49,7 @@ struct List {
 List array[800];
 int M = 1;
 int N;
+int max_size = 0;
 
 void print(){
     for(int i = 0; i < M; i++){
@@ -90,8 +91,8 @@ bool merge(){
                 h_tmp1 = h_tmp2;
                 if(h_tmp2 != 0)
                     h_tmp2 = h_tmp2->_next;
-            }
-            // printf("\n");
+             }
+             // printf("\n");
             h_prev->_next = h_tmp1;
         }else{
             h_prev = h_cur;
@@ -103,15 +104,7 @@ bool merge(){
 void rebuild(bool force = false){
     int blockSize = sqrt(N);
     if(!force){
-        bool flag = false; // is rebuild necessary
-        for(int i = 0; i < M; i++){
-            //TODO: change threshold value before submitting
-            if(array[i]._size > blockSize * 5){
-                flag = true;
-                break;
-            }
-        }
-        if(!flag)
+       if(max_size < blockSize * 4)
             return;
     }
 
@@ -133,6 +126,9 @@ void rebuild(bool force = false){
     }else{
         array[M-1]._size = N % blockSize == 0 ? blockSize : N % blockSize;
     }
+
+    // change max_size due to rebuild
+    max_size = blockSize;
 }
 
 void add(int pos, char c){
@@ -162,6 +158,9 @@ void add(int pos, char c){
         array[x]._tail = node;
     array[x]._size++;
     N++;
+    if(array[x]._size > max_size){
+        max_size = array[x]._size;
+    }
 
     // print();
 
@@ -182,6 +181,7 @@ int main(){
         c = getchar();
     }
     array[0]._size = N;
+    max_size = N;
     rebuild();
 
     // ops

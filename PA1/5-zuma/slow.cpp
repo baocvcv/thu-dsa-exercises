@@ -57,15 +57,15 @@ int main(){
         c = getchar();
         vec.insert(vec.begin() + x, c);
 
-        printf("%d %c\n", x, c);
-        print();
+        // printf("%d %c\n", x, c);
+        // print();
 
         while(merge()){
-            print();
+            // print();
         }
     }
 
-    printf("******");
+    // printf("******");
     print();
 
     return 0;

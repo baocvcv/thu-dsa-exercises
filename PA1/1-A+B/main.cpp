@@ -2,12 +2,11 @@
 #include <cstdio>
 #include <cmath>
 
-using namespace std;
-
 const int LEN = 8;
 const int BUF_SIZE = 1500;
 const long long MOD = pow(10, LEN);
 
+// string to long long int
 inline long long stoi(const char* s, int len = LEN)
 {
     long long res = 0;
@@ -17,7 +16,6 @@ inline long long stoi(const char* s, int len = LEN)
     return res;
 }
 
-// unsigned long 20 digits, each part uses 9 digits
 int multiply(const char* op1, const char* op2, long long* res)
 {
     int n1 = strlen(op1);
@@ -38,7 +36,7 @@ int multiply(const char* op1, const char* op2, long long* res)
         b[lenB++] = stoi(op2 + j, i - j);
     }
 
-    // perform mulitply
+    // perform mulitplication
     for(int i = 0; i < lenA; i++){
         for(int j = 0; j < lenB; j++){
             res[i + j] += a[i] * b[j];
@@ -65,7 +63,7 @@ int main() {
         memset(res, 0, sizeof(long long) * 5000);
         int len = multiply(op1, op2, res);
 
-        // walk through 0s
+        // go through 0s
         while(res[len] == 0 && len > 0)
             len--;
         // first "digit"
