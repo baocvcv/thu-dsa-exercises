@@ -1,7 +1,16 @@
+#include <cstdio>
+#include <cstring>
 
 int main() {
-    char *s;
-    s = new char[1 << 23];
+    unsigned int i = 0;
+    char c = getchar();
+    while(c == '0' || c == '1') {
+        i++;
+        c = getchar();
+    }
 
-    return 0;
+    if (i > 255)
+        return -1;
+    else
+        return i;
 }
