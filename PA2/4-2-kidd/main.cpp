@@ -24,6 +24,7 @@ long long boundaries[600001];
 long long m;
 long long no_of_points;
 
+/* build tree recursively from query points */
 Node* build_tree(long long l, long long r) {
     if (l >= r) { // should not build new node
         return NULL;
@@ -61,7 +62,7 @@ long long turn(long long l_b, long long r_b, Node *c) { // returns how much is i
     }
 }
 
-/* query card at pos k */
+/* query card in [l_b, r_b) */
 long long query(long long l_b, long long r_b, Node *c) {
     if (c == NULL) return 0; // base
 
@@ -70,14 +71,13 @@ long long query(long long l_b, long long r_b, Node *c) {
         sum += c->tag * c->len + c->sum;
     } else if (c->r_bound <= l_b || r_b <= c->l_bound) { // outside
         // do nothing
-    } else {
+    } else { // intersect
         long long r = MIN(c->r_bound, r_b);
         long long l = MAX(c->l_bound, l_b);
         sum += c->tag * (r - l);
         sum += query(l_b, r_b, c->l_child);
         sum += query(l_b, r_b, c->r_child);
     }
-    // printf("+[%d,%d).%d", c->l_bound, c->r_bound, sum);
     return sum;
 }
 
@@ -125,13 +125,11 @@ int main() {
         }
     }
     no_of_points = i + 1;
-    // for (int i = 0 ; i < no_of_points; i++) { printf("%d ", boundaries[i]); } printf("\n");
 
     root = build_tree(0, no_of_points - 1);
     for (long long i = 0; i < m; i++) {
         if (cmd_type[i] == 'H') {
             turn(input[i][0], input[i][1], root);
-            // print_tree(root, 0); printf("\n");
         } else {
             printf("%lld\n", query(input[i][0], input[i][1], root));
         }

@@ -6,9 +6,6 @@
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 #define ll unsigned long long
 
-// #define DEBUG
-#define _OJ_
-
 struct Node {
     ll key;
     int size; // number of significant bits of the key, 1 <= size <= 64
@@ -22,8 +19,7 @@ struct Node {
 
     int cmp(ll prefix) {
         // return the first pos where prefix differs from key
-        // -1 means same
-        // at most 63
+        // -1 = same, at most 63
         int i = size - 1;
         for(; i >= 0; i--) {
             if (((prefix >> i) & 1) != ((key >> i) & 1)) {
@@ -34,6 +30,9 @@ struct Node {
     }
 
     void split(int pos, ll suffix, int suf_len, int _id) {
+        // split the current key at pos
+        // create two new nodes, one with key[pos:], one with suffix
+
         Node *n1 = new Node(suffix, suf_len, _id); // from suffix
         n1->p = this;
         Node *n2 = new Node(key, pos, id); // split from current
@@ -68,11 +67,13 @@ struct Node {
             size++;
             key <<= 1;
         }
+        // connect them up
         l_c = p->l_c; r_c = p->r_c;
         if (l_c != NULL) l_c->p = this;
         if (r_c != NULL) r_c->p = this;
         size += p->size;
 
+        // move around
         ll mask = 1;
         mask = (mask << p->size) - 1;
         p->key &= mask;
@@ -138,7 +139,6 @@ void add_to_tree(ll c, int id) {
             }
         }
     }
-    // printf("****should not reach this****** add\n");
 }
 
 void delete_from_tree(ll c, int id) {
@@ -196,8 +196,8 @@ int main() {
     freopen("input.txt", "r", stdin);
     freopen("output.txt", "w", stdout);
 #endif
-    // setvbuf(stdin, new char[1 << 20], _IOFBF, 1 << 20);
-    // setvbuf(stdout, new char[1 << 20], _IOFBF, 1 << 20);
+    setvbuf(stdin, new char[1 << 20], _IOFBF, 1 << 20);
+    setvbuf(stdout, new char[1 << 20], _IOFBF, 1 << 20);
 
     int n, k;
     scanf("%d %d", &n, &k);
@@ -222,24 +222,13 @@ int main() {
         if (end - start - 1 >= size) {
             end--;
             delete_from_tree(data[end], end);
-            #ifdef DEBUG
-            printf("[Deleted] %llx: %d\n", data[end], end);
-            print_tree(root, 0);
-            #endif
         }
 
         add_to_tree(data[start], start);
-        #ifdef DEBUG
-        printf("[Added]%d: %llx\n", start, data[start]);
-        print_tree(root, 0);
-        #endif
 
         // start query
         if (start <= n - k - 2) {
             query_id = start + k + 1; // the id to be queried
-            #ifdef DEBUG
-            printf("[query] %016llx: %d\n", data[query_id], query(data[query_id]));
-            #endif
             res[query_id] = query(data[query_id]);
             query_id--;
         }
@@ -250,15 +239,6 @@ int main() {
             end--;
             delete_from_tree(data[end], end);
         }
-
-        #ifdef DEBUG
-        printf("[Deleted] %llx: %d\n", data[end], end);
-        print_tree(root, 0);
-        #endif
-
-        #ifdef DEBUG
-        printf("[query] %016llx: %d\n", data[query_id], query(data[query_id]));
-        #endif
         res[query_id] = query(data[query_id]);
         query_id--;
     }

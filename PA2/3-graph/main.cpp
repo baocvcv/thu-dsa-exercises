@@ -7,10 +7,6 @@
 #define ll long long
 #define MAXN 100005
 
-#define DEBUG
-// #define _OJ_
-
-// list
 struct Edge {
     int v; // the other end of the edge
     int val; // val of the edge
@@ -53,31 +49,22 @@ struct List {
 // graph nodes
 struct GraphNode {
     int id;
-    // int dtime; // time discovered, 0 = undiscovered
     int hca; // highest common ancestor
     int parent;
-    // bool visited;
     List<Edge> edges;
 
     GraphNode () {}
-    // GraphNode (int _id): id(_id), dtime(0), is_cut(false), visited(false) {}
     void connect_to(int v) { edges.append(v); }
 };
 
-GraphNode *graph; // start from 1
-GraphNode *bcc_graph;
 int n, m;
-
-// stack
-// int stack[100005];
-// int stack_top;
+GraphNode *graph; // start from 1
 bool visited[MAXN];
 int dtime[MAXN];
 
-void tarjan(int v_id, int& clock) { // look for bcc
+void tarjan(int v_id, int& clock) { // start from v_id
     auto& v = graph[v_id];
     dtime[v_id] = v.hca = ++clock;
-    // stack[stack_top++] = v.id; // push onto stack
     for (auto* e = v.edges.head->next; e != v.edges.tail; e = e->next) {
         auto &u = graph[e->data.v];
         if (!dtime[u.id]) { // u is not visited
@@ -85,7 +72,6 @@ void tarjan(int v_id, int& clock) { // look for bcc
             tarjan(u.id, clock);
             if (u.hca < dtime[v_id]) {
                 v.hca = MIN(v.hca, u.hca);
-            } else { // found a bcc
             }
         } else if (dtime[u.id] && !visited[u.id]) { // u is discovered
             if (u.id != v.parent) v.hca = MIN(v.hca, dtime[u.id]);
@@ -95,6 +81,8 @@ void tarjan(int v_id, int& clock) { // look for bcc
 }
 
 int query(int u, int v, int* res) {
+    // go up the tree
+    // collect the nodes with dtime > hca(child)
     int len = 0;
     int tmp = v;
     while (true) {
@@ -128,11 +116,10 @@ int main() {
 
     scanf("%d %d", &n, &m);
     graph = new GraphNode[n+1];
-    bcc_graph = new GraphNode[n+1];
-    for (int i = 0; i <= n; i++) {
+    for (int i = 0; i <= n; i++) { // init with id
         graph[i].id = i;
     }
-    for (int i = 0; i < m; i++) {
+    for (int i = 0; i < m; i++) { // create graph
         int u, v;
         scanf("%d %d", &u, &v);
         graph[u].connect_to(v);
@@ -146,11 +133,13 @@ int main() {
     for (int i = 0; i < q; i++) {
         int u, v;
         scanf("%d %d", &u, &v);
+
         memset(visited, 0, sizeof(bool) * MAXN);
         memset(dtime, 0, sizeof(int) * MAXN);
         int clock = 0;
         tarjan(u, clock);
         int s = query(u, v, res);
+
         for(int j = 0; j < s; j++) {
             printf("%d ", res[j]);
         }

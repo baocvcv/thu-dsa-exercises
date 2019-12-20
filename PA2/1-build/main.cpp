@@ -4,102 +4,44 @@
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
-#define ll long long
-#define MAXN 100005
 
 // #define _OJ_
-
-struct ListNode {
-    int val;
-    int size;
-    ListNode* next;
-    ListNode(int _v):
-        val(_v), size(1), next(NULL) {}
-};
-
-struct List {
-    ListNode* head;
-    List() {
-        head = new ListNode(-1);
-    }
-    void push(int v) {
-        if (head->next == NULL) {
-            head->next = new ListNode(v);
-            return;
-        }
-        if (v > head->next->val) {
-            ListNode* nn = new ListNode(v);
-            nn->next = head->next;
-            head->next = nn;
-        } else {
-            head->next->size++;
-        }
-    }
-
-    void pop() {
-        ListNode* c = head->next;
-        assert(c != NULL);
-        c->size--;
-        if (c->size == 0) {
-            head->next = c->next;
-            delete c;
-        }
-    }
-
-    int max() {
-        if (head->next == NULL)
-            return -1;
-        return head->next->val;
-    }
-
-    int size() {
-        int s = 0;
-        ListNode* tmp = head->next;
-        while (tmp != NULL) {
-            s++;
-            tmp = tmp->next;
-        }
-        return s;
-    }
-};
-
 struct TreeNode {
     int height, size;
-    int down;
-    int right;
-
-    // List queap;
+    int down; // child
+    int right; // right brother
+    int left; // left brother
     int highest_brother; // highest brother after this node
+    int parent; // parent of the node
 
     TreeNode():
         height(0), size(1),
-        down(0), right(0) {}
+        down(0), right(0), left(0), parent(0),
+        highest_brother(0) {}
 };
 
 TreeNode *tree;
-// TreeNode tree[20];
 int M, N;
 
-int *stack;
-int stack_top;
+void print_tree(int c, int level) {
+    if (c == 0) return;
+    for (int i = 0 ; i < level * 2; i++) printf(" ");
+    printf("%d: h=%d, s=%d, hb=%d, (%d %d)->%d ", c, tree[c].height, tree[c].size, tree[c].highest_brother, tree[c].left, tree[c].right, tree[c].parent);
+    printf("\n");
+    print_tree(tree[c].down, level + 1);
+    print_tree(tree[c].right, level);
+}
 
-int *route;
-int route_len;
-int prev;
 int get() { // select node
     int n;
     scanf("%d", &n);
 
-    route_len = 0;
     int cur = 1;
-    route[route_len++] = cur;
-    int i;
-    for (i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++) {
         int x;
         scanf("%d", &x);
         int child = tree[cur].down;
         while (child != 0 && x > 0) {
-            prev = child;
             child = tree[child].right;
             x--;
         }
@@ -108,156 +50,132 @@ int get() { // select node
             return cur;
         } else {
             cur = child;
-            route[route_len++] = cur;
         }
     }
     return cur;
 }
 
-bool update_height(int parent, int child) {
-    // update parent height when its child changes
+bool update_height(int n) {
+    if (n <= 0) return false;
 
+    // update the height of node n
+    int fc = tree[n].down;
+    if (fc == 0) {
+        tree[n].height = 0;
+    } else if (tree[n].height != tree[fc].highest_brother + 1) {
+        tree[n].height = tree[fc].highest_brother + 1;
+    } else {
+        return false; // height of n is unchanged
+    }
+
+    // update "highest_brother"
+    while (n > 0) {
+        if (tree[n].right > 0)
+            tree[n].highest_brother = MAX(tree[n].height, tree[tree[n].right].highest_brother);
+        else
+            tree[n].highest_brother = tree[n].height;
+        n = tree[n].left;
+    }
+    return true;
 }
 
 int remove() {
     int x = get(); // node to be removed
-    route_len--;
 
-    TreeNode* p = &tree[route[--route_len]]; // parent of x
     // update size
-    p->size -= tree[x].size;
-    // update queap
-    stack_top = 0; // init stack
-    int tmp = p->down;
-    // for (int i = 0; i <= tree[x].rank; i++) {
-    while (tmp != x) {
-        p->queap.pop();
-        stack[stack_top++] = tree[tmp].height;
-        tmp = tree[tmp].right;
+    int par = tree[x].parent;
+    while (par > 0) {
+        tree[par].size -= tree[x].size;
+        par = tree[par].parent;
     }
-    p->queap.pop();
-    // stack_top--; // the last element must be x
-    while (--stack_top >= 0) {
-        p->queap.push(stack[stack_top]);
+
+    // remove x from parent node
+    int x_pred = tree[x].left; // as backup
+    par = tree[x].parent;
+    if (tree[par].down == x) { // x is p's first child
+        tree[par].down = tree[x].right;
+        if (tree[par].down > 0) // x has right brother
+            tree[tree[par].down].left = 0;
+    } else { // x has left brother
+        tree[tree[x].left].right = tree[x].right;
+        if (tree[x].right > 0) // x has right brother
+            tree[tree[x].right].left = tree[x].left;
     }
-    // remove from parent node
-    if (p->down == x) { // x is p's first child
-        p->down = tree[x].right;
-    } else {
-        tree[prev].right = tree[x].right;
+    tree[x].highest_brother = tree[x].height;
+    tree[x].parent = 0;
+    tree[x].left = tree[x].right = 0;
+
+    // update highest brothers
+    int tmp = x_pred;
+    while (tmp > 0) {
+        if (tree[tmp].right > 0)
+            tree[tmp].highest_brother = MAX(tree[tmp].height, tree[tree[tmp].right].highest_brother);
+        else
+            tree[tmp].highest_brother = tree[tmp].height;
+        tmp = tree[tmp].left;
     }
-    // update height if need to and set flag
-    bool flag = false;
-    if (p->height != p->queap.max() + 1) {
-        p->height = p->queap.max() + 1;
-        flag = true;
-    }
-    // if need to update, go up the route
-    TreeNode* p_last = p;
-    int x_last = route[route_len];
-    while (route_len > 0) {
-        TreeNode* p_cur = &tree[route[--route_len]];
-        p_cur->size -= tree[x].size;
-        if (flag) { // update queap
-            stack_top = 0;
-            tmp = p_cur->down;
-            while (tmp != x_last){
-                p_cur->queap.pop();
-                stack[stack_top++] = tree[tmp].height;
-                tmp = tree[tmp].right;
-            }
-            p_cur->queap.pop();
-            stack[stack_top++] = tree[tmp].height;
-            tmp = tree[tmp].right;
-            while (--stack_top >= 0) // push everything back again
-                p_cur->queap.push(stack[stack_top]);
-            if (p_cur->height != p_cur->queap.max() + 1)
-                p_cur->height = p_cur->queap.max() + 1;
-            else
-                flag = false;
-        }
-        p_last = p_cur;
-        x_last = route[route_len];
-    }
+
+    // update parent height
+    while (update_height(par))
+        par = tree[par].parent;
+
+#ifndef _OJ_
+    printf("after deletion\n");
+    print_tree(1, 0);
+    print_tree(x, 0);
+#endif
+
     return x;
 }
 
 void insert(int x) {
-    int parent = get(); // parent to insert into
-    route_len--;
+    int par = get(); // the parent to insert into
     int rank;
     scanf("%d", &rank);
 
-    if (x == 1) return;
+    // insert into parent
+    int r_bro = tree[par].down; // insert between l and r
+    int l_bro = 0;
+    while (rank > 0 && r_bro > 0) {
+        l_bro = r_bro;
+        r_bro = tree[r_bro].right;
+        rank--;
+    }
+    tree[x].parent = par;
+    tree[x].right = r_bro;
+    tree[x].left = l_bro;
+    if (r_bro > 0) tree[r_bro].left = x;
+    if (l_bro > 0) tree[l_bro].right = x;
+    if (r_bro == tree[par].down) {
+        tree[par].down = x;
+    }
 
-    TreeNode* p = &tree[parent];
-    TreeNode* tx = &tree[x];
     // update size
-    p->size += tx->size;
-    // find the one before and after x
-    stack_top = 0;
-    int pred = -1;
-    int succ = p->down;
-    for (int i = 0; i < rank; i++) {
-        stack[stack_top++] = succ;
-        pred = succ;
-        succ = tree[succ].right;
+    while (par > 0) {
+        tree[par].size += tree[x].size;
+        par = tree[par].parent;
     }
-    // insert to parent node
-    if (rank == 0)
-        p->down = x;
-    else
-        tree[pred].right = x;
-    tx->right = succ;
-    int tmp = p->down;
-    stack_top = 0;
-    while (tmp != x) {
-        p->queap.pop(); // pop "rank" number of elements
-        stack[stack_top++] = tree[tmp].height;
-        tmp = tree[tmp].right;
+
+    // update brothers including x
+    int tmp = x;
+    while (tmp > 0) {
+        if (tree[tmp].right > 0)
+            tree[tmp].highest_brother = MAX(tree[tmp].height, tree[tree[tmp].right].highest_brother);
+        else
+            tree[tmp].highest_brother = tree[tmp].height;
+        tmp = tree[tmp].left;
     }
-    // update queap
-    p->queap.push(tx->height);
-    while (--stack_top >= 0)
-        p->queap.push(stack[stack_top]);
-    // update height
-    bool flag = false;
-    if (p->height != p->queap.max() + 1) {
-        p->height = p->queap.max() + 1;
-        flag = true;
-    }
-    // trasmit height
-    TreeNode* p_last = p;
-    int x_last = route[route_len];
-    while (route_len > 0) {
-        p = &tree[route[--route_len]];
-        p->size += tree[x].size;
-        if (flag) {
-            stack_top = 0;
-            int tmp = p->down;
-            while (tmp != x_last) {
-                p->queap.pop();
-                stack[stack_top++] = tree[tmp].height;
-                tmp = tree[tmp].right;
-            }
-            p->queap.pop();
-            stack[stack_top++] = tree[tmp].height;
-            tmp = tree[tmp].right;
-            while (--stack_top >= 0)
-                p->queap.push(stack[stack_top]);
-            if (p->height != p->queap.max() + 1)
-                p->height = p->queap.max() + 1;
-            else
-                flag = false;
-        }
-        p_last = p;
-        x_last = route[route_len];
-    }
+
+    // update parent height
+    par = tree[x].parent;
+    while (update_height(par))
+        par = tree[par].parent;
 }
 
+int *stack;
+int stack_top;
 int *stack2;
 int stack2_top;
-
 void push_brothers_onto_stack(int cur) {
     if (cur == 0) return;
     stack[stack_top++] = cur;
@@ -265,21 +183,17 @@ void push_brothers_onto_stack(int cur) {
     stack2[stack2_top++] = cur;
 }
 
-int go_through_brothers(int cur, List& queap) {
+int go_through_brothers(int cur) {
     TreeNode& n = tree[cur];
     if (n.right == 0) {
-        // queap.head->next = new ListNode(n.height);
-        queap.push(n.height);
+        n.highest_brother = n.height;
         return n.size;
     }
-
-    int size = n.size + go_through_brothers(tree[cur].right, queap);
-
-    if (n.height > queap.head->next->val) {
-        queap.push(n.height);
-    } else {
-        queap.head->next->size++;
-    }
+    int size = n.size + go_through_brothers(tree[cur].right);
+    if (n.height < tree[n.right].highest_brother)
+        n.highest_brother = tree[n.right].highest_brother;
+    else
+        n.highest_brother = n.height;
     return size;
 }
 
@@ -296,29 +210,16 @@ void buildTree() {
         int x = stack[--stack_top];
         TreeNode& n = tree[x];
         if (n.down != 0) {
-            n.size += go_through_brothers(n.down, n.queap);
-            n.height = n.queap.head->next->val + 1;
+            n.size += go_through_brothers(n.down);
+            n.height = tree[n.down].highest_brother + 1;
         }
     }
 }
 
-void print_tree(int c, int level) {
-    if (c == 0) return;
-    for (int i = 0 ; i < level * 2; i++) printf(" ");
-    printf("%d: h=%d, s=%d, qp: ", c, tree[c].height, tree[c].size);
-    // for (auto p = tree[c].queap.head->next; p != NULL; p = p->next)
-    //     printf("%d*%d- ", p->val, p->size);
-    printf("\n");
-    print_tree(tree[c].down, level + 1);
-    print_tree(tree[c].right, level);
-}
-
-
-
 int main() {
 #ifndef _OJ_
     freopen("input.txt", "r", stdin);
-    freopen("output.txt", "w", stdout);
+    // freopen("output.txt", "w", stdout);
 #endif
 #ifdef _OJ_
     // setvbuf(stdin, new char[1 << 20], _IOFBF, 1 << 20);
@@ -327,9 +228,8 @@ int main() {
 
     scanf("%d %d", &N, &M);
     tree = new TreeNode[N+5];
-    stack = new int[N+10];
-    stack2 = new int[N+10];
-    route = new int[N+10];
+    stack = new int[N + 1000];
+    stack2 = new int[N + 1000];
     for (int i = 1; i <= N; i++) {
         int d;
         scanf("%d", &d);
@@ -337,15 +237,19 @@ int main() {
         int cur;
         if (d > 0) {
             scanf("%d", &x);
+            tree[x].parent = i;
             tree[i].down = x;
             cur = x;
         }
         for (int rank = 1; rank < d; rank++) {
             scanf("%d", &x);
+            tree[x].parent = i;
             tree[cur].right = x;
+            tree[x].left = cur;
             cur = x;
         }
     }
+    tree[1].parent = 0;
 
     buildTree();
 
@@ -357,8 +261,8 @@ int main() {
         int cmd;
         scanf("%d", &cmd);
         if (cmd == 0) {
-            // remove();
-            insert(remove());
+            int x = remove();
+            insert(x);
 #ifndef _OJ_
             print_tree(1, 0); printf("\n");
 #endif
