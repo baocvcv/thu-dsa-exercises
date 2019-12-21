@@ -34,13 +34,23 @@ struct BitmapTree {
     inline void set_bit(int k) { data[k >> 3] |= bytes[k & 0x07]; }
     inline int check(int k) { return data[k >> 3] & bytes[k & 0x07]; }
 
-    inline void insert_string(char* s, int len, int start) { // insert string into tree
-        int cur_bit = 0; // used to track parent bit position, must have been set to 1
-        for (int i = 0; i < len; i++) {
-            int dir = (s[(i + start) % len] == '1'); // go right if dir == 1, left if dir == 0
-            int next_bit = (cur_bit << 1) + dir; // pos of the next bit
-            set_bit(next_bit);
-            cur_bit = next_bit;
+    inline void insert_string(unsigned int s, int len, int start) { // insert string into tree
+        // last 24 digits are the string, 25th digit is 1
+        // int cur_bit = 0; // used to track parent bit position, must have been set to 1
+        // for (int i = 0; i < len; i++) {
+        //     int dir = (s[(i + start) % len] == '1'); // go right if dir == 1, left if dir == 0
+        //     int next_bit = (cur_bit << 1) + dir; // pos of the next bit
+        //     set_bit(next_bit);
+        //     cur_bit = next_bit;
+        // }
+
+        while (s > 0) {
+            if (check(s)) {
+                break;
+            } else {
+                set_bit(s);
+                s >>= 1;
+            }
         }
     }
 
@@ -70,7 +80,6 @@ struct BitmapTree {
 
 };
 
-
 int main() {
 #ifndef _OJ_
     freopen("input.txt", "r", stdin);
@@ -83,23 +92,35 @@ int main() {
 
     // read first 24 chars
     int len, start;
-    char s[24];
+    unsigned int s = 0;
     char c = getchar();
     for(len = start = 0; len < 24 && c != EOF; len++) {
-        s[len] = c;
+        // s[len] = c;
+        s |= (c - '0');
+        s <<= 1;
         c = getchar();
     }
+    unsigned int mask_1 = (1 << len);
+    unsigned int mask_0 = (1 << len) - 1;
     while (c != EOF) {
         // insert cur string
+        s &= mask_0;
+        s |= mask_1;
         tree.insert_string(s, len, start);
         // rolling update
-        s[start++] = c;
+        // s[start++] = c;
+        s <<= 1;
+        s |= (c - '0');
         start %= len;
         c = getchar();
     }
     // insert the rest of the string
     for (int i = 0; i < len; i++) {
+        s &= mask_0;
+        s |= mask_1;
         tree.insert_string(s, len - i, (start + i) % len);
+        mask_0 >>= 1;
+        mask_1 >>= 1;
     }
 
     // get result
