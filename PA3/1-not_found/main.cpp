@@ -17,35 +17,28 @@ const unsigned int bytes[] = {
     0x80 >> 7,
 };
 
-// use bitmap to represent a complete binary tree
-// edge represents chars, going left = 0, going right = 1
-// node denotes if the path from parent to child has been taken
-struct BitmapTree {
+// use bitmap to store a dictionary tree
+// edge represents chars, going left = '0', going right = '1'
+// node(=0/1) represents if the path has been taken
+struct BitMapTree {
     int total_len;
     char* data;
 
-    BitmapTree (int _len) {
+    BitMapTree (int _len) {
         total_len = (_len + 7) >> 3;
         data = new char[total_len];
         reset();
         set_bit(0); // set root node to 1
     }
+    // basic bitmat operations
     inline void reset() { memset(data, 0, sizeof(char) * total_len); }
     inline void set_bit(int k) { data[k >> 3] |= bytes[k & 0x07]; }
     inline int check(int k) { return (data[k >> 3] & bytes[k & 0x07]) != 0; }
 
-    inline void insert_string(unsigned int s, int len, int start) { // insert string into tree
-        // last 24 digits are the string, 25th digit is 1
-        // int cur_bit = 0; // used to track parent bit position, must have been set to 1
-        // for (int i = 0; i < len; i++) {
-        //     int dir = (s[(i + start) % len] == '1'); // go right if dir == 1, left if dir == 0
-        //     int next_bit = (cur_bit << 1) + dir; // pos of the next bit
-        //     set_bit(next_bit);
-        //     cur_bit = next_bit;
-        // }
-
-        // for (int i = 0; i < len_target; i++) { printf("%c", s[(start + i) % len_s]); } printf("\n");
-
+    // insert string s into tree
+    // e.g. if the string to be inserted is s = 1001001,
+    // then (s-1) is the bit of the lowest node corresponding to s
+    inline void insert_string(unsigned int s) {
         while (s > 0) {
             if (check(s - 1)) {
                 break;
@@ -56,8 +49,9 @@ struct BitmapTree {
         }
     }
 
-    int get_result(char* res) { // res used to store the result, in recerse order
-        // find the first 0
+    // res is used to store the result, in reverse order
+    int get_result(char* res) {
+        // find the first unoccupied node
         int pos;
         for (int i = 0; i < total_len; i++) {
             if (data[i] != '\377') { // contains 0
@@ -75,6 +69,7 @@ struct BitmapTree {
         int len = 0;
         for (int i = pos; i > 0; i = (i - 1) / 2) {
             // if i % 2 == 0, current node is right child, so set result to '1'
+            // & vice versa
             if (i & 1)
                 res[len++] = '0';
             else
@@ -103,31 +98,29 @@ int main() {
     freopen("output.txt", "w", stdout);
 #endif
 #ifdef _OJ_
-    setvbuf(stdin, new char[1 << 20], _IOFBF, 1 << 20);
-    setvbuf(stdout, new char[1 << 20], _IOFBF, 1 << 20);
+    setvbuf(stdin, new char[1 << 21], _IOFBF, 1 << 21);
+    setvbuf(stdout, new char[1 << 6], _IOFBF, 1 << 6);
 #endif
 
-    BitmapTree tree(1 << 25);
+    BitMapTree tree(1 << 25);
 
     // read first 24 chars
     int len, start;
     unsigned int s = 0;
     char c = getchar();
     for(len = start = 0; len < 24 && c != '\n'; len++) {
-        // s[len] = c;
         s <<= 1;
         s |= (c - '0');
         c = getchar();
     }
-    unsigned int mask_1 = (1 << len);
-    unsigned int mask_0 = (1 << len) - 1;
+    unsigned int mask_1 = (1 << len); // used to set first bit to 1
+    unsigned int mask_0 = (1 << len) - 1; // used to set first bit to 0
     while (c != '\n') {
         // insert cur string
-        s &= mask_0; // set other bits to zero
-        // printf("%x  ", s);
-        s |= mask_1;
-        // printf("%x\n", s);
-        tree.insert_string(s, len, start);
+        s &= mask_0; // set higher bits to 0
+        s |= mask_1; // set first bit to 1
+        // 1 is inserted at the front of s, so that (s-1) is just the bit representing the lowest node of s in the tree
+        tree.insert_string(s);
 
         // rolling update
         s <<= 1;
@@ -138,15 +131,11 @@ int main() {
     // insert the rest of the string
     for (int i = 0; i < len; i++) {
         s &= mask_0;
-        // printf("%x  ", s);
         s |= mask_1;
-        // printf("%x\n", s);
-        tree.insert_string(s, len - i, (start + i) % len);
-        // tree.print_line(1 << 8);
+        tree.insert_string(s);
         mask_0 >>= 1;
         mask_1 >>= 1;
     }
-    // tree.print_line(1 << 8);
 
     // get result
     char res[50];
